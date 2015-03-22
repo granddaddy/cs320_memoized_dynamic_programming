@@ -100,7 +100,7 @@ int findLeastSumSlackMemoHelper(std::string* wordArray, int j, int c, int W, int
 {
 
 	// base case
-	if(j < 0) return soln[0] = 0;
+	if(j < 0) return 0;
 	assert(c > 0);
 	if(c <= W) return soln[j] = (W - c)*(W - c);
 	
@@ -130,33 +130,50 @@ int findLeastSumSlackMemoHelper(std::string* wordArray, int j, int c, int W, int
 
 }
 
-int findLeastSumSlackDPHelper(std::string* wordArray, int j, int c, int W)
+int findLeastSumSlackDPHelper(std::string* wordArray, int j, int W, int* soln)
 {	
-	int* solnArray = new int[j+1]; 
-	for (int i = 0; i < j; i++) solnArray[i] = INT_MAX;
-	
-	
+	for (int a = 0; a <= j; a++) {
 		
-	
-	for (int m = -1; m <= j; m++) {
+		if(a == 0) soln[0] = 0;		
 		
-		if(j < 0) return soln[0] = 0;;
-		if(c <= W) return soln[j] = (W - c)*(W - c);
-		
-		int p_j = smallestPossibleIndex(wordArray, m, W);
-		
-		for(int n = i; n >= p_j; n--) {
-			int lineWeight = 0;
-			for (int n = j; n >= m; n--) {
-				lineWeight += wordArray[n].length() + 1;
-			}
-			lineWeight--;
+		else 
+		{
+			int c = 0;
+			for(int i = 0; i < a; i++) c += wordArray[i].length() + 1;
+			c--;
 			
+			if(c <= W) soln[a] = (W - c)*(W - c);
+				
+			else 
+			{
+			
+				int p_j = smallestPossibleIndex(wordArray, a-1, W);
+				
+				// calculations are done with indexing, stored in index of total numbers
+				for(int m = a-1; m >= p_j; m--) {
+					int lineWeight = 0;
+					for (int n = a-1; n >= m; n--) {
+						lineWeight += wordArray[n].length() + 1;
+					}
+					lineWeight--;
+					int slack = W - lineWeight;
+					assert(slack >= 0);
+					
+					int ret;
+					
+					if(soln[m] != INT_MAX) ret = (slack * slack) + soln[m];
+					
+					else ret = (slack * slack) + findLeastSumSlackDPHelper(wordArray, m, W, soln);
+					
+					if (ret < soln[a]) soln[a] = ret;
+									
+				}
+			
+			}
 		}
-		
-		
 	}
-	delete solnArray;
+	
+	return soln[j];
 }
 
 int findLeastSumSlack(std::string listOfWords, int W)
@@ -167,14 +184,15 @@ int findLeastSumSlack(std::string listOfWords, int W)
 	int n = newInstance.numberOfWords;
 	int totalLengthOfCharacters = newInstance.totalLengthOfCharacters;
 	
-	int* solnArray = new int[n];
+	int* solnArray = new int[n+1];
 	
-	for(int i = 0; i < n; i++)
+	for(int i = 0; i <= n; i++)
 	{
 		solnArray[i] = INT_MAX;
 	}
 	
-	int soln = findLeastSumSlackMemoHelper(wordArray, n-1, totalLengthOfCharacters, W, solnArray);
+	// int soln = findLeastSumSlackMemoHelper(wordArray, n-1, totalLengthOfCharacters, W, solnArray);
+	int soln = findLeastSumSlackDPHelper(wordArray, n, W, solnArray);
 	
 	delete solnArray;
 	delete newInstance.stringArray;
@@ -183,8 +201,8 @@ int findLeastSumSlack(std::string listOfWords, int W)
 	
 	// int soln = findLeastSumSlackNaiveHelper(wordArray, n-1, totalLengthOfCharacters, W);
 	
-	// delete newInstance.stringArray;
 	// delete newInstance.lengthOfWords;
+	// delete newInstance.stringArray;
 	
 	
 	return soln;
@@ -192,7 +210,7 @@ int findLeastSumSlack(std::string listOfWords, int W)
 }
 
 
-int testNaive()
+int testFindLeastSumSlack()
 {
 	// test for empty word list
 	std::string listOfWords = "";
@@ -206,6 +224,7 @@ int testNaive()
 
 	// non trivial cases
 	assert(findLeastSumSlack(listOfWords, 3) == 1);
+	
 	
 	listOfWords = "He l l l";
 	assert(findLeastSumSlack(listOfWords, 4) == 1);
@@ -267,5 +286,5 @@ int main()
 {
 	testCreateInstance();
 	testSmallestPossibleIndex();
-	testNaive();
+	testFindLeastSumSlack();
 }
